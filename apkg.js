@@ -148,7 +148,11 @@ function ankiURLToTable(ankiURL, useCorsProxy, corsProxyURL) {
     var zipxhr = new XMLHttpRequest();
     zipxhr.open('GET', (useCorsProxy ? corsProxyURL : "") + ankiURL, true);
     zipxhr.responseType = 'arraybuffer';
-    zipxhr.onload = function(e) { ankiBinaryToTable(this.response); };
+    zipxhr.onload = function(e) {
+      ankiBinaryToTable(this.response);
+      tintTablewithMDL();
+      updateSpinner(false);
+    };
     zipxhr.send();
 }
 
@@ -888,15 +892,30 @@ function convert(data, headers, suppressHeader) {
     return convertToCsv(rows);
 }
 
+function updateSpinner(active){
+    var spinner = document.getElementById("apkg-spinner");
+  if (active){
+    spinner.classList.add("is-active");
+  }else{
+    spinner.classList.remove("is-active");
+  }
+}
+
+function tintTablewithMDL(){
+    $("table").addClass("mdl-data-table mdl-shadow--2dp");
+    $("td").addClass("mdl-data-table__cell--non-numeric");
+    $("th").addClass("mdl-data-table__cell--non-numeric");
+}
 $(document).ready(function() {
     var eventHandleToTable = function(event) {
+        updateSpinner(true);
         event.stopPropagation();
         event.preventDefault();
         var f = event.target.files[0];
         if (!f) {
             f = event.dataTransfer.files[0];
         }
-        // console.log(f.name);
+        console.log(f.name);
 
         var reader = new FileReader();
         if ("function" in event.data) {
@@ -917,8 +936,15 @@ $(document).ready(function() {
     };
 
     // Deck browser
-    $("#ankiFile").change({"function" : ankiBinaryToTable}, eventHandleToTable);
+    $("#ankiFile").change({"function" :
+                  function(data) {
+                    ankiBinaryToTable(data);
+                    tintTablewithMDL();
+                    updateSpinner(false);
+                  },
+                }, eventHandleToTable);
     $("#ankiURLSubmit").click(function(event) {
+        updateSpinner(true);
         ankiURLToTable($("#ankiURL").val(), true);
         $("#ankiURL").val('');
     });
